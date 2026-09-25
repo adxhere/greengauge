@@ -1,0 +1,100 @@
+# GreenGauge plant spec: a representative small grey-iron foundry in the Coimbatore cluster.
+# Every number here is a MODELLING ASSUMPTION. Before submission, replace or cite each one
+# (BEE / SIDBI cluster studies, equipment datasheets, the current TNERC tariff order, CEA).
+# This file doubles as the "key assumptions" section of your write-up.
+
+plant:
+  name: "Sri Murugan Castings (simulated)"
+  location: "Coimbatore, Tamil Nadu"
+  product: "Grey iron castings"
+  avg_casting_kg: 25
+  supply_voltage_v: 415
+  contract_demand_kva: 360
+  timezone: "Asia/Kolkata"
+
+schedule:
+  working_days: [0, 1, 2, 3, 4, 5]          # Mon-Sat (Python weekday numbers; Sunday off)
+  shifts:
+    - {name: A, start: "06:00", end: "14:00", break_start: "10:00", break_end: "10:30"}
+    - {name: B, start: "14:00", end: "22:00", break_start: "18:00", break_end: "18:30"}
+
+ambient:
+  min_c: 22
+  max_c: 34
+  hottest_hour: 14
+
+furnace:
+  name: induction_furnace
+  rated_kw: 250
+  reference_charge_kg: 300      # melt_minutes applies to a charge of this weight
+  melt_minutes: 45
+  pour_minutes: 10
+  pour_kw: 40
+  holding_kw: 30                # kept warm during breaks
+  charge_kg: [280, 320]         # random charge weight per heat
+  casting_yield: 0.85           # metal that ends up in good castings (rest = runners, risers)
+  pf: 0.95
+
+compressor:
+  name: air_compressor
+  load_kw: 37
+  unload_kw: 11
+  load_pf: 0.86
+  unload_pf: 0.45
+  capacity_m3_min: 6.0
+  production_demand_m3_min: 3.2
+  demand_noise: 0.15
+  system_volume_m3: 8.0          # receiver + pipework
+  pressure_band_bar: [6.5, 7.5]  # load below / unload above
+  temp_coeff_per_c: 0.004        # extra power per degree C above 25
+  healthy_leak_m3_min: 0.3       # ~5% of capacity: a well-maintained system
+
+motors:
+  # runs: furnace      -> runs whenever the furnace draws power, plus 30 min cool-down
+  #       shift        -> runs the whole shift, including breaks
+  #       intermittent -> runs in bursts during production, with the given duty
+  - {name: cooling_pump,       rated_kw: 15,   load_factor: 0.80, idle_kw: 0,  pf: 0.84, runs: furnace}
+  - {name: dust_collector_fan, rated_kw: 22,   load_factor: 0.85, idle_kw: 18, pf: 0.85, runs: shift}
+  - {name: sand_mixer,         rated_kw: 18.5, load_factor: 0.70, idle_kw: 6,  pf: 0.80, runs: intermittent, duty: 0.4}
+  - {name: shot_blast,         rated_kw: 11,   load_factor: 0.75, idle_kw: 4,  pf: 0.80, runs: intermittent, duty: 0.5}
+
+lighting_aux:
+  name: lighting_aux
+  shift_kw: 12
+  night_kw: 3
+  pf: 0.95
+
+apfc:                            # automatic power factor correction panel
+  target_pf: 0.98
+  max_kvar: 200
+  step_kvar: 25
+
+tariff:
+  # PLACEHOLDERS: verify every value against the current TNERC tariff order before quoting.
+  energy_inr_per_kwh: 7.5
+  demand_inr_per_kva_month: 600
+  peak_hours: [["06:00", "10:00"], ["18:00", "22:00"]]
+  peak_surcharge_pct: 25
+  offpeak_hours: [["22:00", "05:00"]]
+  offpeak_rebate_pct: 5
+  pf_threshold: 0.90
+  emission_factor_kg_per_kwh: 0.72   # replace with the latest CEA CO2 Baseline Database value
+
+faults:
+  air_leak:
+    start_day: 0
+    leak_m3_min: 1.8               # ~30% of capacity: typical of an unmaintained system
+  idle_running:
+    start_day: 0
+    break_idlers: [sand_mixer, shot_blast]                  # left idling through breaks
+    overnight_left_on: [dust_collector_fan, air_compressor] # sometimes left on overnight
+    overnight_probability: 0.4
+  apfc_failure:
+    start_day: 3
+    capacity_lost: 0.9             # 90% of capacitor steps dead
+  motor_degradation:
+    start_day: 2
+    machine: cooling_pump
+    days_to_severe: 10
+    max_imbalance_pct: 8
+    max_current_rise_pct: 12
