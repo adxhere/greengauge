@@ -1,0 +1,3 @@
+# Keep Linux line endings so config files work inside Docker on Windows
+* text=auto eol=lf
+*.png binary

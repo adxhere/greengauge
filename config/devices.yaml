@@ -1,0 +1,25 @@
+# GreenGauge site configuration: which meters the gateway polls.
+# On a real plant this is the only file you would edit: point the gateway at the
+# plant's Modbus TCP gateway / meters and list each meter's unit ID.
+
+plant_id: sri-murugan-castings
+
+modbus:
+  host: meter            # docker service name; use 127.0.0.1 when running locally
+  port: 5020
+  poll_seconds: 0.25     # keep this well below the meter tick (60 / SPEED seconds)
+
+mqtt:
+  host: mqtt             # docker service name; use 127.0.0.1 when running locally
+  port: 1883
+  topic_root: greengauge
+
+devices:
+  - {unit: 1,  name: main_incomer,       type: incomer}
+  - {unit: 11, name: induction_furnace,  type: machine}
+  - {unit: 12, name: air_compressor,     type: machine}
+  - {unit: 13, name: cooling_pump,       type: machine}
+  - {unit: 14, name: dust_collector_fan, type: machine}
+  - {unit: 15, name: sand_mixer,         type: machine}
+  - {unit: 16, name: shot_blast,         type: machine}
+  - {unit: 17, name: lighting_aux,       type: machine}

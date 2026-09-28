@@ -1,0 +1,7 @@
+.venv
+.git
+data
+simulator/output
+**/__pycache__
+dashboard/node_modules
+dashboard/dist

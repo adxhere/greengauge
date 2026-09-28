@@ -1,0 +1,69 @@
+# GreenGauge analytics configuration for one plant.
+# On a real deployment this is filled in during onboarding (from the electricity bill,
+# the contract with the DISCOM, and a 30-minute walk around the plant).
+# Values marked PLACEHOLDER must be verified or cited before submission.
+
+site:
+  plant_id: sri-murugan-castings
+  name: "Sri Murugan Castings"
+  location: "Coimbatore, Tamil Nadu"
+  product: "Grey iron castings"
+  timezone: Asia/Kolkata
+  contract_demand_kva: 360
+
+tariff:                                  # PLACEHOLDER: verify against the current TNERC tariff order
+  energy_inr_per_kwh: 7.5
+  demand_inr_per_kva_month: 600
+  excess_demand_multiplier: 2.0          # demand above contract billed at this multiple
+  peak_hours: [["06:00", "10:00"], ["18:00", "22:00"]]
+  peak_surcharge_pct: 25
+  offpeak_hours: [["22:00", "05:00"]]
+  offpeak_rebate_pct: 5
+  pf_threshold: 0.90                     # below this, the DISCOM charges a penalty
+  pf_penalty_pct_per_0_01: 1.0           # PLACEHOLDER: % of energy charges per 0.01 below threshold
+  emission_factor_kg_per_kwh: 0.72       # PLACEHOLDER: use the latest CEA CO2 Baseline Database value
+
+detection:
+  running_kw: 1.0                        # a machine drawing more than this is "on"
+  # When should each machine be allowed to run while the line is NOT producing?
+  #   break:       lunch/tea breaks inside a shift
+  #   after_hours: nights, Sundays, holidays
+  #   grace_minutes: allowed run-on after the last shift ends (cool-down, shutdown)
+  #   Keep "off" in quotes: YAML reads a bare off as false (the code accepts both).
+  default_rule: {break: allowed, after_hours: allowed, grace_minutes: 10}
+  machines:
+    induction_furnace:  {break: allowed, after_hours: "off"}       # holding during breaks is normal
+    air_compressor:     {break: allowed, after_hours: "off"}
+    cooling_pump:       {break: allowed, after_hours: "off", grace_minutes: 30}
+    dust_collector_fan: {break: allowed, after_hours: "off"}
+    sand_mixer:         {break: "off",   after_hours: "off"}
+    shot_blast:         {break: "off",   after_hours: "off"}
+    lighting_aux:       {break: allowed, after_hours: allowed}  # security lighting at night
+
+  compressor: air_compressor
+  leak_target_pct: 10                    # well-maintained systems stay at or below ~10%
+  leak_alert_pct: 20
+  leak_min_minutes: 20                   # need this many non-production minutes to run the test
+  leak_alert_window_hours: 12            # live leak alert looks at this recent window
+
+  pf_warn: 0.95
+  md_warning_pct: 95                     # alert when a 30-min block reaches this % of contract demand
+
+  motor_imbalance_warn_pct: 3
+  motor_imbalance_alarm_pct: 5
+  motor_min_running_minutes: 30          # per day, to trust the daily imbalance figure
+  motor_exclude: [lighting_aux]          # not a motor
+
+  baseline_days: 3                       # first N days of the analysis window = baseline period
+                                         # (matches the default backfill: 3 faulty days before the live demo)
+  baseline_min_shifts: 4
+
+recommendations:                         # PLACEHOLDER capex: replace with vendor quotes
+  leak_repair_capex_inr: 25000           # ultrasonic leak survey + fittings + labour
+  idle_interlock_capex_inr_per_machine: 8000   # timer/interlock so machines stop with the line
+  apfc_repair_inr_per_kvar: 600          # replacement capacitor steps + contactors
+  compressor_vfd_capex_inr: 250000       # variable-speed drive retrofit, 37 kW class
+  vfd_unload_savings_share: 0.8          # share of unload-running energy a VFD eliminates
+  motor_inspection_capex_inr: 5000
+  downtime_cost_inr_per_hour: 15000      # lost production if the cooling pump fails mid-melt
+  expected_breakdown_hours: 16

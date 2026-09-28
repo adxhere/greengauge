@@ -1,0 +1,106 @@
+# GreenGauge data pipeline
+#   simulated plant -> Modbus meters -> gateway -> MQTT -> ingester -> TimescaleDB
+#
+#   docker compose up --build        start everything
+#   docker compose down              stop (data is kept)
+#   docker compose down -v           stop and wipe the database + generated data
+
+services:
+  simgen:            # one-shot: generates the demo scenarios (skips if they already exist)
+    build: .
+    command: python simulator/generate_scenarios.py --out /data --days 7
+    volumes:
+      - simdata:/data
+
+  mqtt:
+    image: eclipse-mosquitto:2
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./config/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+
+  db:
+    image: timescale/timescaledb:latest-pg16
+    environment:
+      POSTGRES_USER: greengauge
+      POSTGRES_PASSWORD: greengauge
+      POSTGRES_DB: greengauge
+    ports:
+      - "5433:5432"   # 5433 on your laptop, so it won't clash with a local Postgres
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U greengauge -d greengauge"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  meter:             # the simulated plant's energy meters
+    build: .
+    command: python meter/meter_server.py --data /data
+    environment:
+      SCENARIO: ${SCENARIO:-healthy}
+      SPEED: ${SPEED:-60}
+      START: ${START:-2026-09-10 05:50}
+      MQTT_HOST: mqtt
+    ports:
+      - "5020:5020"
+    volumes:
+      - simdata:/data:ro
+    depends_on:
+      simgen:
+        condition: service_completed_successfully
+      mqtt:
+        condition: service_started
+
+  gateway:           # edge gateway: Modbus -> MQTT
+    build: .
+    command: python gateway/gateway.py
+    depends_on:
+      - meter
+      - mqtt
+
+  ingest:            # MQTT -> TimescaleDB
+    build: .
+    command: python ingest/ingest.py
+    environment:
+      MQTT_HOST: mqtt
+      DATABASE_URL: postgresql://greengauge:greengauge@db:5432/greengauge
+    depends_on:
+      db:
+        condition: service_healthy
+      mqtt:
+        condition: service_started
+
+  analytics:         # REST API at http://localhost:8000/docs
+    build: .
+    command: uvicorn analytics.app:app --host 0.0.0.0 --port 8000
+    environment:
+      DATABASE_URL: postgresql://greengauge:greengauge@db:5432/greengauge
+      START: ${START:-2026-09-10 05:50}
+    ports:
+      - "8000:8000"
+    volumes:
+      - simdata:/data:ro       # lets tools/backfill.py read the scenarios
+    depends_on:
+      db:
+        condition: service_healthy
+
+  dashboard:         # the GreenGauge dashboard at http://localhost:3000
+    build: ./dashboard
+    ports:
+      - "3000:80"
+    depends_on:
+      - analytics
+
+  adminer:           # browse the database at http://localhost:8080
+    image: adminer
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+
+volumes:
+  simdata:
+  dbdata:
