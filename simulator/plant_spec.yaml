@@ -1,7 +1,7 @@
-# GreenGauge plant spec: a representative small grey-iron foundry in the Coimbatore cluster.
-# Every number here is a MODELLING ASSUMPTION. Before submission, replace or cite each one
-# (BEE / SIDBI cluster studies, equipment datasheets, the current TNERC tariff order, CEA).
-# This file doubles as the "key assumptions" section of your write-up.
+# GreenGauge plant spec: a representative small grey-iron foundry in the Coimbatore cluster
+# (BEE counts ~535 foundries there, mostly small and micro, using induction melting).
+# Tariff and emission factor are cited below. Equipment sizes, schedules and fault severities
+# are modelling assumptions chosen to be typical of a small induction foundry.
 
 plant:
   name: "Sri Murugan Castings (simulated)"
@@ -70,15 +70,15 @@ apfc:                            # automatic power factor correction panel
   step_kvar: 25
 
 tariff:
-  # PLACEHOLDERS: verify every value against the current TNERC tariff order before quoting.
-  energy_inr_per_kwh: 7.5
-  demand_inr_per_kva_month: 600
+  # TNERC Tariff Order No. 6 of 2025 (effective 01-07-2025), HT I-A industries.
+  energy_inr_per_kwh: 7.50
+  demand_inr_per_kva_month: 608
   peak_hours: [["06:00", "10:00"], ["18:00", "22:00"]]
   peak_surcharge_pct: 25
   offpeak_hours: [["22:00", "05:00"]]
   offpeak_rebate_pct: 5
   pf_threshold: 0.90
-  emission_factor_kg_per_kwh: 0.72   # replace with the latest CEA CO2 Baseline Database value
+  emission_factor_kg_per_kwh: 0.710  # CEA CO2 Baseline Database v21.0, FY 2024-25 (provisional)
 
 faults:
   air_leak:

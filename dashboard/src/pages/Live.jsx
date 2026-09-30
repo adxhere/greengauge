@@ -87,7 +87,7 @@ export default function Live() {
               </div>
             </>
           )}
-          <p className="card-note small">{DEMO ? 'Recorded snapshot of the live system. The full version updates every 3 seconds.' : 'Telegram delivery (English + Tamil) is added in step 5.'}</p>
+          <p className="card-note small">{DEMO ? 'Recorded snapshot of the live system. The full version updates every 3 seconds.' : 'New alerts also go to the supervisor on Telegram, in English and Tamil.'}</p>
         </div>
       </section>
 

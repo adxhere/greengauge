@@ -53,6 +53,8 @@ def engine(days: float) -> Engine:
         inc, mac = db.load(PLANT, days)
     except db.NoData as e:
         raise HTTPException(503, str(e))
+    except db.psycopg.OperationalError:
+        raise HTTPException(503, "Database not reachable. Is the db container running?")
     if len(inc) < 10:
         raise HTTPException(503, "Not enough data yet. Let the pipeline run for a few minutes.")
     return Engine(CFG, inc, mac)
@@ -144,8 +146,8 @@ def timeseries(device: str = "main_incomer", hours: float = Query(24, gt=0, le=2
                bucket_minutes: int = Query(5, ge=1, le=1440)):
     try:
         df = db.timeseries(PLANT, device, hours, bucket_minutes)
-    except db.NoData as e:
-        raise HTTPException(503, str(e))
+    except (db.NoData, db.psycopg.OperationalError) as e:
+        raise HTTPException(503, str(e).splitlines()[0])
     return clean({"device": device, "bucket_minutes": bucket_minutes,
                   "points": df.round({c: 3 for c in df.columns if c != "time"}).to_dict(orient="records")})
 
@@ -154,7 +156,7 @@ def timeseries(device: str = "main_incomer", hours: float = Query(24, gt=0, le=2
 def timeseries_machines(hours: float = Query(24, gt=0, le=24 * 31), bucket_minutes: int = Query(15, ge=1, le=1440)):
     try:
         df = db.machines_timeseries(PLANT, hours, bucket_minutes)
-    except db.NoData as e:
-        raise HTTPException(503, str(e))
+    except (db.NoData, db.psycopg.OperationalError) as e:
+        raise HTTPException(503, str(e).splitlines()[0])
     wide = df.pivot_table(index="time", columns="device", values="kw").round(2).reset_index()
     return clean({"bucket_minutes": bucket_minutes, "points": wide.to_dict(orient="records")})

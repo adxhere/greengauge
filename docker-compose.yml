@@ -94,6 +94,17 @@ services:
     depends_on:
       - analytics
 
+  alerts:            # Telegram alerts in English + Tamil (dry-run until .env has a bot token)
+    build: .
+    command: python alerts/telegram_alerts.py
+    environment:
+      API_URL: http://analytics:8000
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
+      DASHBOARD_URL: ${DASHBOARD_URL:-}
+    depends_on:
+      - analytics
+
   adminer:           # browse the database at http://localhost:8080
     image: adminer
     ports:

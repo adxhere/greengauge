@@ -4,3 +4,4 @@ simulator/output/
 data/
 dashboard/node_modules/
 dashboard/dist/
+.env

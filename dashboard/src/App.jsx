@@ -38,6 +38,8 @@ export default function App() {
       <main className="main">
         {apiDown ? (
           <Waiting title="Can't reach the analytics service" text="The dashboard is up, but the analytics API isn't answering. Start the whole stack from the project folder:" cmd="docker compose up --build" />
+        ) : waiting && health.data?.detail?.startsWith('Database') ? (
+          <Waiting title="Database not reachable" text="The analytics service is up, but it can't reach the database. Make sure every container is running:" cmd="docker compose up" />
         ) : waiting ? (
           <Waiting title="Waiting for plant data" text="The analytics service is running, but there are no readings yet. Give the pipeline a minute, or load three days of history now:" cmd="docker compose exec analytics python tools/backfill.py --scenario faulty" />
         ) : (

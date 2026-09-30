@@ -121,6 +121,24 @@ npm install
 npm run dev          # http://localhost:3000, talks to the API on localhost:8000
 ```
 
+## Telegram alerts (step 5)
+
+New problems go to the shift supervisor on Telegram, in English and Tamil. When a machine
+that was left running is switched off, a follow-up message reports what it cost.
+
+1. On Telegram, message **@BotFather**, send `/newbot`, and copy the token.
+2. From the supervisor's phone, send the new bot any message.
+3. Find the chat id: `python tools/telegram_chat_id.py YOUR_TOKEN`
+4. Copy `.env.example` to `.env` and fill in `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID`.
+   (`.env` is git-ignored: never commit your token.)
+5. `docker compose up -d alerts` (or restart the whole stack).
+
+Without a token the service runs in dry-run mode and only prints messages in its logs:
+`docker compose logs -f alerts`
+
+Alerts already active when the service starts are not re-sent; flip a fault
+(`mosquitto_pub ... -m faulty`) to trigger fresh ones during a demo.
+
 ## Public demo site (Vercel)
 
 Vercel can host the dashboard but not the backend (Docker, database, MQTT), so the
@@ -173,11 +191,15 @@ See `common/registers.py` for the full table.
 Ground-truth fault labels are deliberately **not** sent through the meters (a real meter
 can't know why power is wasted). They stay in the simulator CSVs for testing the analytics.
 
-## Assumptions
+## Assumptions and sources
 
-All plant, tariff and emission-factor numbers live in `simulator/plant_spec.yaml`.
-Replace each with a cited source before submission.
+- Tariff: TNERC Tariff Order No. 6 of 2025 (HT I-A, effective 1 July 2025): ₹7.50/kWh, ₹608/kVA/month,
+  +25% peak (06-10, 18-22), -5% off-peak. Set in `config/analytics.yaml`.
+- Grid emission factor: CEA CO2 Baseline Database v21.0, FY 2024-25: 0.710 tCO2/MWh.
+- Plant: a typical small induction foundry (equipment sizes, schedules, fault severities) in
+  `simulator/plant_spec.yaml`. These are modelling assumptions, not measurements.
+- Fix costs in `config/analytics.yaml` are indicative estimates: use vendor quotes for a real plant.
 
 ## Next steps
 
-Step 5: Telegram alerts in English and Tamil.
+All five build steps are complete. See `config/analytics.yaml` for tariff and emission-factor sources.

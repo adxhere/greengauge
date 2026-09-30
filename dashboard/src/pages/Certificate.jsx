@@ -61,7 +61,7 @@ export default function Certificate({ days }) {
             <div><span>Reporting period</span><span>{dateRange(c.period.start, c.period.end)} ({num(c.period.days, 1)} days)</span></div>
             <div><span>Castings produced</span><span>{c.pieces.toLocaleString('en-IN')}</span></div>
             <div><span>Electricity consumed</span><span>{num(c.electricity_kwh, 1)} kWh</span></div>
-            <div><span>Grid emission factor</span><span>{c.emission_factor_kg_per_kwh} kg CO₂/kWh <span className="placeholder">[CEA CO₂ Baseline Database, version]</span></span></div>
+            <div><span>Grid emission factor</span><span>{c.emission_factor_kg_per_kwh} kg CO₂/kWh <span className="placeholder">(CEA CO₂ Baseline Database v21.0, FY 2024-25)</span></span></div>
             <div><span>Total emissions</span><span>{num(c.total_co2_kg / 1000, 2)} t CO₂</span></div>
             <div><span>Scope</span><span>{c.scope}</span></div>
           </div>

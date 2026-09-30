@@ -11,17 +11,24 @@ site:
   timezone: Asia/Kolkata
   contract_demand_kva: 360
 
-tariff:                                  # PLACEHOLDER: verify against the current TNERC tariff order
-  energy_inr_per_kwh: 7.5
-  demand_inr_per_kva_month: 600
-  excess_demand_multiplier: 2.0          # demand above contract billed at this multiple
-  peak_hours: [["06:00", "10:00"], ["18:00", "22:00"]]
+tariff:
+  # Source: TNERC Tariff Order No. 6 of 2025 (dated 30-06-2025, effective 01-07-2025), HT I-A industries.
+  # The FY2026-27 CPI escalation due from 01-07-2026 had not been notified at the time of writing:
+  # check TNPDCL's latest tariff circular before quoting these to a customer.
+  energy_inr_per_kwh: 7.50
+  demand_inr_per_kva_month: 608
+  peak_hours: [["06:00", "10:00"], ["18:00", "22:00"]]   # +25% on energy charges (TNERC ToD)
   peak_surcharge_pct: 25
-  offpeak_hours: [["22:00", "05:00"]]
+  offpeak_hours: [["22:00", "05:00"]]                    # -5% rebate (TNERC ToD)
   offpeak_rebate_pct: 5
-  pf_threshold: 0.90                     # below this, the DISCOM charges a penalty
-  pf_penalty_pct_per_0_01: 1.0           # PLACEHOLDER: % of energy charges per 0.01 below threshold
-  emission_factor_kg_per_kwh: 0.72       # PLACEHOLDER: use the latest CEA CO2 Baseline Database value
+  pf_threshold: 0.90                     # low-PF compensation applies below this (same order)
+  pf_penalty_pct_per_0_01: 1.0           # 1% per 0.01 for PF 0.90-0.85 (1.5% for 0.85-0.75, 2% below 0.75)
+  # ASSUMPTION (not from the tariff order; confirm with the DISCOM / the plant's own bills):
+  excess_demand_multiplier: 2.0          # demand above contract billed at this multiple
+  # Not modelled: Tamil Nadu electricity tax (5% ad valorem), so rupee savings are slightly understated.
+  # Source: CEA CO2 Baseline Database, Version 21.0 (2025): all-India weighted average
+  # emission factor for FY 2024-25 = 0.710 tCO2/MWh (provisional).
+  emission_factor_kg_per_kwh: 0.710
 
 detection:
   running_kw: 1.0                        # a machine drawing more than this is "on"
@@ -58,7 +65,7 @@ detection:
                                          # (matches the default backfill: 3 faulty days before the live demo)
   baseline_min_shifts: 4
 
-recommendations:                         # PLACEHOLDER capex: replace with vendor quotes
+recommendations:                         # INDICATIVE capex estimates: replace with vendor quotes for a real plant
   leak_repair_capex_inr: 25000           # ultrasonic leak survey + fittings + labour
   idle_interlock_capex_inr_per_machine: 8000   # timer/interlock so machines stop with the line
   apfc_repair_inr_per_kvar: 600          # replacement capacitor steps + contactors
